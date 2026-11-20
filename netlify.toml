@@ -1,0 +1,40 @@
+# Netlify Configuration for HENU OS Documentation Portal
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Security & Cache Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Clean URLs & Redirects
+[[redirects]]
+  from = "/docs"
+  to = "/index.html"
+  status = 301
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/:splat"
+  status = 301
+
+# Fallback for 404 page
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

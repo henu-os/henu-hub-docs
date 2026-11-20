@@ -24,7 +24,18 @@ const server = http.createServer((req, res) => {
     filePath = path.join(filePath, 'index.html');
   }
 
+  // Support clean URLs without .html
+  if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) {
+    filePath = filePath + '.html';
+  }
+
   if (!fs.existsSync(filePath)) {
+    const notFoundPage = path.join(distDir, '404.html');
+    if (fs.existsSync(notFoundPage)) {
+      res.writeHead(404, { 'Content-Type': 'text/html' });
+      res.end(fs.readFileSync(notFoundPage));
+      return;
+    }
     res.writeHead(404, { 'Content-Type': 'text/html' });
     res.end('<h1>404 Not Found</h1><p>Documentation page does not exist.</p>');
     return;

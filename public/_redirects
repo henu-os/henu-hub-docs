@@ -1,0 +1,4 @@
+# Netlify Redirects for HENU Hub Docs
+/docs/*  /:splat  301
+/docs    /index.html  301
+/*       /404.html  404
