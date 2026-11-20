@@ -1,0 +1,19 @@
+{
+  "name": "henu-hub-docs",
+  "version": "1.2.0",
+  "description": "Central technical, architectural, operational, and corporate governance documentation portal for HENU OS PRIVATE LIMITED",
+  "author": "HENU OS PRIVATE LIMITED <info@henuos.in>",
+  "homepage": "https://www.henuos.in/",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-portal.js",
+    "serve": "node scripts/serve.js",
+    "test": "node test/verify-docs.js && node test/check-links.js",
+    "lint": "node test/check-links.js",
+    "format": "prettier --write \"**/*.md\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}
