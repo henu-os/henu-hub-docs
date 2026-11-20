@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Release Lifecycle & Packaging | HENU OS Documentation</title>
+  <meta name="description" content="Package formats (EXE, MSI, ZIP, DMG, AppImage, DEB) and SHA-256 checks.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/henu-logo.png">
+  
+  <!-- Tailwind CSS & GitHub Primer Typography -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#6D4AFF',
+              dark: '#5B37EB',
+              lavender: '#DCD5FF',
+              surface: '#F7F7FB',
+              ink: '#171329',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --color-canvas-default: #ffffff;
+      --color-canvas-subtle: #f6f8fa;
+      --color-border-default: #d0d7de;
+      --color-fg-default: #1f2328;
+      --color-fg-muted: #656d76;
+    }
+    .dark {
+      --color-canvas-default: #0d1117;
+      --color-canvas-subtle: #161b22;
+      --color-border-default: #30363d;
+      --color-fg-default: #e6edf3;
+      --color-fg-muted: #8b949e;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c1c7d0;
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #30363d;
+    }
+    /* Active TOC highlight */
+    .toc-active {
+      color: #6D4AFF !important;
+      font-weight: 600;
+      border-left: 2px solid #6D4AFF;
+      padding-left: 0.5rem;
+      margin-left: -0.75rem;
+    }
+    .dark .toc-active {
+      color: #a78bfa !important;
+      border-left-color: #a78bfa;
+    }
+  </style>
+
+  <script>
+    // Theme initialization (prevent flicker)
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+<body class="bg-white dark:bg-[#0d1117] text-slate-800 dark:text-[#e6edf3] antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- TOP NAVIGATION HEADER (GitHub Docs style) -->
+  <header class="sticky top-0 z-40 w-full bg-white/90 dark:bg-[#0d1117]/90 backdrop-blur-md border-b border-slate-200 dark:border-[#30363d]">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo & Product Brand -->
+      <div class="flex items-center gap-4 min-w-0">
+        <!-- Mobile hamburger -->
+        <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-[#8b949e] hover:bg-slate-100 dark:hover:bg-[#161b22]">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="21"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+
+        <a href="index.html" class="flex items-center gap-3 group">
+          <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-[#30363d] shadow-2xs group-hover:border-[#6D4AFF] transition-colors">
+            <img src="assets/henu-logo.png" alt="HENU OS" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/32x32/6D4AFF/white?text=H'">
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm tracking-tight text-slate-900 dark:text-[#f0f6fc]">HENU OS</span>
+            <span class="text-slate-300 dark:text-[#30363d]">/</span>
+            <span class="text-xs font-semibold text-slate-600 dark:text-[#8b949e]">Docs</span>
+          </div>
+        </a>
+
+        <!-- Version Selector -->
+        <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-[#161b22] text-[#6D4AFF] dark:text-[#a78bfa] border border-slate-200 dark:border-[#30363d]">
+          <span>v1.2.0</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-[#6D4AFF] text-white">PROD</span>
+        </div>
+      </div>
+
+      <!-- Center Spotlight Search Trigger -->
+      <div class="flex-1 max-w-lg mx-2 hidden md:block">
+        <button onclick="openSearchModal()" class="w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-slate-400 dark:text-[#8b949e] bg-slate-50 dark:bg-[#161b22] hover:bg-slate-100 dark:hover:bg-[#21262d] border border-slate-200 dark:border-[#30363d] rounded-lg transition-all shadow-2xs group">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Search documentation...</span>
+          </span>
+          <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-[#8b949e] bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-[#30363d] rounded shadow-2xs">Ctrl K</kbd>
+        </button>
+      </div>
+
+      <!-- Right Navigation Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Search icon for mobile -->
+        <button onclick="openSearchModal()" class="md:hidden p-2 text-slate-600 dark:text-[#8b949e] hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+
+        <a href="https://github.com/henu-os" target="_blank" rel="noreferrer" class="p-2 text-slate-500 hover:text-slate-900 dark:text-[#8b949e] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg transition-colors" title="GitHub Repositories">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-slate-900 dark:text-[#8b949e] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg transition-colors" title="Toggle color theme">
+          <svg id="sunIcon" class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="moonIcon" class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <a href="CORPORATE_SUPPORT.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#6D4AFF] text-white hover:bg-[#5B37EB] transition-colors shadow-2xs">
+          <span>Support Desk</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE SIDEBAR OVERLAY -->
+  <div id="mobileDrawer" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs hidden lg:hidden" onclick="toggleMobileMenu()">
+    <div class="w-80 max-w-[85%] h-full bg-white dark:bg-[#0d1117] p-6 overflow-y-auto border-r border-slate-200 dark:border-[#30363d]" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-[#30363d]">
+        <div class="flex items-center gap-2">
+          <img src="assets/henu-logo.png" alt="HENU OS" class="w-6 h-6 object-contain">
+          <span class="font-bold text-sm text-slate-900 dark:text-[#f0f6fc]">HENU Docs</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="p-1 text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <nav>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[#6D4AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Getting Started & Overview</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="index.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Overview</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Corporate Governance & Support</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Architecture & Specifications</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SYSTEM_ARCHITECTURE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">System Architecture</span>
+          </a>
+          <a href="REPOSITORIES_REFERENCE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Repositories Reference</span>
+          </a>
+          <a href="PLATFORM_CAPABILITIES.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Matrix & Capabilities</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Setup & Configuration</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="ADDING_A_NEW_HENU_APPLICATION.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Adding a New Application</span>
+          </a>
+          <a href="API_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform API Setup</span>
+          </a>
+          <a href="ADMIN_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Admin Console Setup</span>
+          </a>
+          <a href="HUB_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">HENU HUB Desktop Setup</span>
+          </a>
+          <a href="GITHUB_APP_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">GitHub App & Webhooks</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span>Release, Packaging & Catalogue</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 ">
+          <a href="RELEASE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors bg-[#F0EEFF] dark:bg-[#1f1a3a] text-[#6D4AFF] dark:text-[#a78bfa] font-semibold border-l-2 border-[#6D4AFF]">
+            <span class="truncate">Release Lifecycle & Packaging</span>
+          </a>
+          <a href="CATALOGUE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Catalogue & Rollback</span>
+          </a>
+          <a href="CHANNELS_AND_VERSIONING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Channels & Versioning</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Security & Operations</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SECURITY_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Security & Secrets Policy</span>
+          </a>
+          <a href="DEPLOYMENT_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Production Deployment</span>
+          </a>
+          <a href="TROUBLESHOOTING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Troubleshooting Runbooks</span>
+          </a>
+          <a href="BACKUP_AND_RECOVERY.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Backup & Disaster Recovery</span>
+          </a>
+        </div>
+      </div></nav>
+    </div>
+  </div>
+
+  <!-- MAIN 3-COLUMN CONTENT WRAPPER -->
+  <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex py-6 gap-8">
+    
+    <!-- LEFT SIDEBAR NAVIGATION (Desktop) -->
+    <aside class="w-64 flex-shrink-0 hidden lg:block sticky top-22 self-start max-h-[calc(100vh-6.5rem)] overflow-y-auto pr-3">
+      <nav id="desktopNav" class="text-xs">
+        
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[#6D4AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Getting Started & Overview</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="index.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Overview</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Corporate Governance & Support</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Architecture & Specifications</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SYSTEM_ARCHITECTURE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">System Architecture</span>
+          </a>
+          <a href="REPOSITORIES_REFERENCE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Repositories Reference</span>
+          </a>
+          <a href="PLATFORM_CAPABILITIES.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Matrix & Capabilities</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Setup & Configuration</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="ADDING_A_NEW_HENU_APPLICATION.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Adding a New Application</span>
+          </a>
+          <a href="API_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform API Setup</span>
+          </a>
+          <a href="ADMIN_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Admin Console Setup</span>
+          </a>
+          <a href="HUB_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">HENU HUB Desktop Setup</span>
+          </a>
+          <a href="GITHUB_APP_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">GitHub App & Webhooks</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span>Release, Packaging & Catalogue</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 ">
+          <a href="RELEASE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors bg-[#F0EEFF] dark:bg-[#1f1a3a] text-[#6D4AFF] dark:text-[#a78bfa] font-semibold border-l-2 border-[#6D4AFF]">
+            <span class="truncate">Release Lifecycle & Packaging</span>
+          </a>
+          <a href="CATALOGUE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Catalogue & Rollback</span>
+          </a>
+          <a href="CHANNELS_AND_VERSIONING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Channels & Versioning</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Security & Operations</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SECURITY_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Security & Secrets Policy</span>
+          </a>
+          <a href="DEPLOYMENT_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Production Deployment</span>
+          </a>
+          <a href="TROUBLESHOOTING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Troubleshooting Runbooks</span>
+          </a>
+          <a href="BACKUP_AND_RECOVERY.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Backup & Disaster Recovery</span>
+          </a>
+        </div>
+      </div>
+      </nav>
+    </aside>
+
+    <!-- CENTER ARTICLE CONTENT -->
+    <main class="flex-1 min-w-0 max-w-4xl">
+      
+      <!-- Breadcrumb Bar -->
+      <nav class="flex items-center gap-2 text-xs text-slate-400 dark:text-[#8b949e] mb-4 font-medium">
+        <a href="index.html" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">Docs</a>
+        <span>/</span>
+        <span class="text-slate-600 dark:text-[#c9d1d9] truncate">Release Lifecycle & Packaging</span>
+      </nav>
+
+      <!-- Article Header & Meta -->
+      <div class="mb-8">
+        <p class="text-sm text-slate-500 dark:text-[#8b949e] mt-1 leading-relaxed">Package formats (EXE, MSI, ZIP, DMG, AppImage, DEB) and SHA-256 checks.</p>
+        <div class="flex items-center gap-4 text-xs text-slate-400 dark:text-[#8b949e] mt-3 pt-3 border-t border-slate-100 dark:border-[#21262d]">
+          <span class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Verified Production Spec</span>
+          </span>
+          <span>•</span>
+          <span>HENU OS PRIVATE LIMITED</span>
+        </div>
+      </div>
+
+      <!-- Rendered Article -->
+      <article class="prose max-w-none text-slate-800 dark:text-[#c9d1d9] leading-relaxed">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-2 mb-4 pb-3 border-b border-slate-200 dark:border-[#30363d]">HENU Product Release Guide</h1>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">This guide establishes the official release lifecycle, package naming conventions, cryptographic verification standards, release state machine, and format-specific packaging procedures across all HENU software repositories.</p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">---</p>
+
+<h2 id="1-the-henu-release-contract" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>1. The HENU Release Contract</span>
+      <a href="#1-the-henu-release-contract" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Every supported product release must fulfill the complete release contract defined in <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-common-actions</code>:
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Product ID</strong>: Kebab-case identifier registered in HENU Admin (e.g. <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-pa</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Semantic Version</strong>: Valid SemVer 2.0.0 (e.g. <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">1.0.0</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">1.1.0-beta.1</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Release Channel</strong>: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">stable</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">beta</code>, or <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">nightly</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">OS & Architecture</strong>: Clear mapping for each binary (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">windows-x64</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">macos-universal</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">linux-x86_64</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Installable Packages</strong>: Supported packaging format (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">msi</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">exe</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">dmg</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">pkg</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">deb</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">appimage</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">tar.gz</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">zip</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">SHA-256 Checksums</strong>: Cryptographic hash for every asset and an accompanying <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">SHA256SUMS</code> file.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Release Notes</strong>: Structured Markdown describing changes, improvements, and fixes.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Minimum HUB Version</strong>: Supported launcher version constraint.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol>---</p>
+
+<h2 id="2-release-asset-naming-conventions" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>2. Release Asset Naming Conventions</span>
+      <a href="#2-release-asset-naming-conventions" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">To guarantee deterministic matching across the Platform API, GitHub App, and HENU HUB, binary assets must follow this naming convention:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">text</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>{productId}-{version}-{os}-{arch}.{format}
+</code></pre>
+    </div>
+
+<h3 id="examples" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Examples</span>
+      <a href="#examples" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<div class="my-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#30363d] shadow-2xs"><table class="w-full text-left text-xs border-collapse"><thead class="bg-slate-50 dark:bg-[#161b22] border-b border-slate-200 dark:border-[#30363d] text-slate-700 dark:text-[#c9d1d9] font-semibold"><tr><th class="px-4 py-3">Product</th><th class="px-4 py-3">Target OS</th><th class="px-4 py-3">CPU Arch</th><th class="px-4 py-3">Package Format</th><th class="px-4 py-3">Compliant File Name</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-[#21262d] bg-white dark:bg-[#0d1117]"><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU PA</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Windows</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">MSI</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-pa-1.0.0-windows-x64.msi</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU PA</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">macOS</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Universal</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">DMG</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-pa-1.0.0-macos-universal.dmg</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU PA</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Linux</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">AppImage</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-pa-1.0.0-linux-x86_64.AppImage</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU AI</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Windows</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">EXE</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ai-2.4.0-windows-x64.exe</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU AI</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">macOS</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Universal</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">PKG</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ai-2.4.0-macos-universal.pkg</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU AI</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Linux</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">DEB</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ai-2.4.0-linux-x86_64.deb</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU IDE</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Windows</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">ZIP</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ide-3.1.2-windows-x64.zip</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU IDE</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">macOS</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Universal</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">DMG</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ide-3.1.2-macos-universal.dmg</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">HENU IDE</strong></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Linux</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">x86_64</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">TAR.GZ</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-ide-3.1.2-linux-x86_64.tar.gz</code></td></tr></tbody></table></div>
+---
+
+<h2 id="3-release-lifecycle-state-machine" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>3. Release Lifecycle State Machine</span>
+      <a href="#3-release-lifecycle-state-machine" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<div class="mermaid my-6 p-4 rounded-xl border border-slate-200 dark:border-[#30363d] bg-slate-50 dark:bg-[#161b22] text-center overflow-x-auto">stateDiagram-v2
+    [*] --> DRAFT : Tag Created in Git
+    DRAFT --> INGESTED : GitHub Action builds & publishes release
+    INGESTED --> PENDING_APPROVAL : Webhook received & SHA-256 verified
+    PENDING_APPROVAL --> APPROVED : Admin reviews and approves in Admin Panel
+    PENDING_APPROVAL --> REJECTED : Admin rejects or validation fails
+    APPROVED --> PUBLISHED : Included in published Catalogue Revision
+    REJECTED --> [*]
+    PUBLISHED --> [*]</div>
+
+<h3 id="state-definitions" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>State Definitions</span>
+      <a href="#state-definitions" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">DRAFT</code></strong>: Release tag pushed; packages being compiled and signed in GitHub Actions.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">INGESTED</code></strong>: GitHub Release published; webhook received by <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-platform-api</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">PENDING_APPROVAL</code></strong>: Platform API has streamed each asset binary from GitHub, computed and validated its SHA-256 digest, and queued it for administrative review.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">APPROVED</code></strong>: A Release Manager has reviewed the release in <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-addplo</code> and marked it ready for distribution.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">REJECTED</code></strong>: Validation failed (e.g. missing platform packages, corrupted binary, pre-release version targeting stable).</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">PUBLISHED</code></strong>: Included in a published catalogue revision; live in HENU HUB.</li>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul>---</p>
+
+<h2 id="4-package-verification-standards" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>4. Package Verification Standards</span>
+      <a href="#4-package-verification-standards" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<h3 id="cryptographic-digest-generation" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Cryptographic Digest Generation</span>
+      <a href="#cryptographic-digest-generation" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Packages must never be published without generating streaming SHA-256 digests. <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-common-actions</code> runs:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>node scripts/generate-checksums.js ./release-assets SHA256SUMS
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">This produces a verifiable <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">SHA256SUMS</code> file:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">text</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  henu-pa-1.0.0-windows-x64.msi
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  henu-pa-1.0.0-macos-universal.dmg
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  henu-pa-1.0.0-linux-x86_64.AppImage
+</code></pre>
+    </div>
+
+<h3 id="slsa-build-attestation" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>SLSA Build Attestation</span>
+      <a href="#slsa-build-attestation" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Workflows invoke <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">actions/attest-build-provenance</code> to record cryptographically signed OIDC attestations linking the build artifacts to the exact commit SHA and repository.</p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">---</p>
+
+<h2 id="5-end-to-end-release-pipeline-walkthrough" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>5. End-to-End Release Pipeline Walkthrough</span>
+      <a href="#5-end-to-end-release-pipeline-walkthrough" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<h3 id="step-1-developer-creates-a-version-tag" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 1: Developer Creates a Version Tag</span>
+      <a href="#step-1-developer-creates-a-version-tag" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Product engineers tag a verified release commit following standard Semantic Versioning:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>git checkout main
+git pull origin main
+git tag -a v1.0.0 -m "Release v1.0.0: Stable enterprise release"
+git push origin v1.0.0
+</code></pre>
+    </div>
+
+<h3 id="step-2-github-actions-multi-platform-compilation" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 2: GitHub Actions Multi-Platform Compilation</span>
+      <a href="#step-2-github-actions-multi-platform-compilation" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Pushing tag <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">v<em class="italic">.</em>.*</code> automatically triggers the product repository's release workflow (inheriting from <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-common-actions/.github/workflows/reusable-release.yml</code>):
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Matrix Runners</strong>: Spawns GitHub-hosted runners (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">windows-latest</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">macos-latest</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">ubuntu-latest</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Native Compilation</strong>: Compiles the code (e.g., Tauri, Electron, or Go/Rust binary).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Packaging</strong>: Generates native installers and portable archives.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Digest Calculation</strong>: Streams file bytes through Node crypto to generate <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">SHA256SUMS</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Attestation</strong>: Cryptographically signs artifacts via GitHub OIDC.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol><h3 id="step-3-release-artifacts-upload-to-github-release" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 3: Release Artifacts Upload to GitHub Release</span>
+      <a href="#step-3-release-artifacts-upload-to-github-release" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">The workflow creates a published GitHub Release on <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">https://github.com/henu-os/{repo}/releases/tag/v1.0.0</code> attaching:
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Native binaries (e.g., <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">.msi</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">.dmg</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">.AppImage</code>)</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">release-manifest.json</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">SHA256SUMS</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Markdown release notes</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul><h3 id="step-4-henu-platform-webhook-ingestion" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 4: HENU Platform Webhook Ingestion</span>
+      <a href="#step-4-henu-platform-webhook-ingestion" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Upon release publication, GitHub emits a <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">release</code> webhook event with <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">action: published</code> to:
+<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">POST https://api.henuos.in/api/v1/webhooks/github</code></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">The platform API performs security checks:
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Validates the <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">X-Hub-Signature-256</code> HMAC against <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GITHUB_WEBHOOK_SECRET</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Checks idempotency using <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">X-GitHub-Delivery</code> GUID.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Maps the GitHub repository to the registered Application.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol><h3 id="step-5-platform-api-validation" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 5: Platform API Validation</span>
+      <a href="#step-5-platform-api-validation" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">The API background job:
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Downloads and inspects <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">release-manifest.json</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Confirms version compatibility against existing versions.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Streams each binary from GitHub and recalculates its SHA-256 checksum to verify integrity.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Marks assets as <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">VERIFIED</code> and sets release status to <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">PENDING_APPROVAL</code>.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol><h3 id="step-6-henu-admin-review-gatekeeper" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 6: HENU Admin Review & Gatekeeper</span>
+      <a href="#step-6-henu-admin-review-gatekeeper" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Release Managers log in to HENU Admin (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3001</code>):
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Navigate to <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Releases</strong> (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">/releases</code>) and click on the new release.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Review target version, changelog, target platforms, and verified checksums.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Click <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Approve Release</strong> or select a channel for promotion (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">STABLE</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">BETA</code>, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">NIGHTLY</code>).</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol><h3 id="step-7-catalogue-publishing" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 7: Catalogue Publishing</span>
+      <a href="#step-7-catalogue-publishing" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">In HENU Admin, navigate to <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Catalogue Publishing</strong> (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">/catalogue/publish</code>).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Pre-flight checks verify that every approved application has valid download URLs and signatures.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Administrator clicks <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Publish Catalogue Revision</strong>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">A new immutable revision is committed with a unique revision number and cryptographic hash.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">The API dispatches an SSE event (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">catalogue.updated</code>) to all connected HUB clients.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol><h3 id="step-8-henu-hub-detection-and-installation" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Step 8: HENU HUB Detection and Installation</span>
+      <a href="#step-8-henu-hub-detection-and-installation" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Desktop clients receive the live SSE event or poll <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GET /api/v1/hub/catalogue</code> with <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">If-None-Match</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">HUB detects the new version and updates the application card state to <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">Update Available</code>.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">When the user clicks <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Update / Install</strong>:</li>
+</ol><ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Downloads the platform-specific package with progress streaming.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Computes local SHA-256 checksum and compares with catalogue hash.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">If hash matches, executes the native installer or unpacks the package.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Launches application safely once verification passes.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul>---</p>
+
+<h2 id="6-format-specific-packaging-guidance" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>6. Format-Specific Packaging Guidance</span>
+      <a href="#6-format-specific-packaging-guidance" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<h3 id="windows-packages" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Windows Packages</span>
+      <a href="#windows-packages" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">EXE Setup Installer</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: NSIS (Nullsoft Scriptable Install System) or Inno Setup.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-windows-x64.exe</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Silent Installation Argument: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">/S</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Uninstaller registration: Windows Registry <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">MSI Windows Installer</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: WiX Toolset.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-windows-x64.msi</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Silent Installation Argument: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">msiexec /i <package.msi> /qn /norestart</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Ideal for enterprise Group Policy (GPO) and Active Directory deployments.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">ZIP Portable Archive</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-windows-x64.zip</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Unpacked into <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">%LOCALAPPDATA%\Programs\{app}</code> without requiring administrator elevation.</li>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul><h3 id="macos-packages" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>macOS Packages</span>
+      <a href="#macos-packages" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">DMG Disk Image</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">create-dmg</code> or native <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">hdiutil</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-macos-universal.dmg</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Contains <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">.app</code> bundle with drag-and-drop link to <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">/Applications</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Mounted via <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">hdiutil attach</code>, copied, and unmounted.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">PKG Installer Package</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">pkgbuild</code> and <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">productbuild</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-macos-universal.pkg</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Installed via <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">sudo installer -pkg <package.pkg> -target /</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">ZIP Archive</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-macos-universal.zip</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Clean zip containing the signed and notarized <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">.app</code> bundle.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul><h3 id="linux-packages" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Linux Packages</span>
+      <a href="#linux-packages" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">AppImage</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">appimagetool</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-linux-x86_64.AppImage</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Standalone executable containing all bundled runtime dependencies.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Made executable via <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">chmod +x</code> and executed directly.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">DEB Debian/Ubuntu Package</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">dpkg-deb</code> or <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">cargo-deb</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-linux-x86_64.deb</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Installed via <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">sudo dpkg -i <package.deb></code> or <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">apt install</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">TAR.GZ Linux Tarball</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging Tool: standard GNU <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">tar</code>.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Typical naming: <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-{app}-{version}-linux-x86_64.tar.gz</code></li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Portable archive extracted into <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">/opt/{app}</code> or <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">~/.local/share/{app}</code>.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul><h3 id="web-applications" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Web Applications</span>
+      <a href="#web-applications" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Hosted Cloud Application</strong>:</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Type: Cloud-hosted single-page application (SPA) or server-rendered web service.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Deployment: Continuous deployment via Vercel, Netlify, or AWS CloudFront.</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Packaging: No binary installer required. The release manifest provides the canonical HTTPS browser URL (<code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">webAppUrl</code>).</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">HENU HUB behavior: Renders an active <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Launch Web App</strong> button that launches the application in the system's default browser or embedded container.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul>---</p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">_Copyright &copy; 2026 HENU OS PRIVATE LIMITED. All rights reserved._</p>
+      </article>
+
+      <!-- Previous / Next Navigation Cards -->
+      <div class="mt-12 pt-6 border-t border-slate-200 dark:border-[#30363d] grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <a href="GITHUB_APP_SETUP.html" class="group p-4 rounded-xl border border-slate-200 dark:border-[#30363d] hover:border-[#6D4AFF] dark:hover:border-[#6D4AFF] bg-slate-50/50 dark:bg-[#161b22]/50 hover:bg-white dark:hover:bg-[#161b22] transition-all flex flex-col">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+          <svg class="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Previous
+        </span>
+        <span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc] mt-1 group-hover:text-[#6D4AFF] dark:group-hover:text-[#a78bfa] transition-colors">GitHub App & Webhooks</span>
+      </a>
+      <a href="CATALOGUE_GUIDE.html" class="group p-4 rounded-xl border border-slate-200 dark:border-[#30363d] hover:border-[#6D4AFF] dark:hover:border-[#6D4AFF] bg-slate-50/50 dark:bg-[#161b22]/50 hover:bg-white dark:hover:bg-[#161b22] transition-all flex flex-col text-right">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-end gap-1">
+          Next
+          <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+        <span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc] mt-1 group-hover:text-[#6D4AFF] dark:group-hover:text-[#a78bfa] transition-colors">Catalogue & Rollback</span>
+      </a></div>
+
+      <!-- Footer Info Bar -->
+      <footer class="mt-14 pt-8 border-t border-slate-200 dark:border-[#30363d] text-xs text-slate-400 dark:text-[#8b949e] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          Official documentation for <strong class="text-slate-700 dark:text-[#c9d1d9]">HENU OS PRIVATE LIMITED</strong> (CIN: <code class="text-[11px]">U62099RJ2025PTC109150</code>)
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="CORPORATE_SUPPORT.html" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">Governance & Legal</a>
+          <span>•</span>
+          <a href="https://www.henuos.in/" target="_blank" rel="noreferrer" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">henuos.in</a>
+        </div>
+      </footer>
+    </main>
+
+    <!-- RIGHT SIDEBAR ("In this article") (Desktop) -->
+    <aside class="w-56 flex-shrink-0 hidden xl:block self-start">
+      
+      <div class="toc-container sticky top-20 text-xs">
+        <div class="font-semibold text-slate-900 dark:text-[#f0f6fc] uppercase tracking-wider text-[11px] mb-3 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          <span>In this article</span>
+        </div>
+        <ul class="space-y-1.5 border-l border-slate-200 dark:border-[#30363d] pl-3 text-slate-600 dark:text-[#8b949e]">
+          <li>
+            <a href="#1-the-henu-release-contract" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">1. The HENU Release Contract</a>
+          </li>
+          <li>
+            <a href="#2-release-asset-naming-conventions" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">2. Release Asset Naming Conventions</a>
+          </li>
+          <li>
+            <a href="#3-release-lifecycle-state-machine" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">3. Release Lifecycle State Machine</a>
+          </li>
+          <li>
+            <a href="#4-package-verification-standards" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">4. Package Verification Standards</a>
+          </li>
+          <li>
+            <a href="#5-end-to-end-release-pipeline-walkthrough" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">5. End-to-End Release Pipeline Walkthrough</a>
+          </li>
+          <li>
+            <a href="#6-format-specific-packaging-guidance" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">6. Format-Specific Packaging Guidance</a>
+          </li>
+          <li>
+            <a href="#examples" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Examples</a>
+          </li>
+          <li>
+            <a href="#state-definitions" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">State Definitions</a>
+          </li>
+          <li>
+            <a href="#cryptographic-digest-generation" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Cryptographic Digest Generation</a>
+          </li>
+          <li>
+            <a href="#slsa-build-attestation" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">SLSA Build Attestation</a>
+          </li>
+          <li>
+            <a href="#step-1-developer-creates-a-version-tag" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 1: Developer Creates a Version Tag</a>
+          </li>
+          <li>
+            <a href="#step-2-github-actions-multi-platform-compilation" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 2: GitHub Actions Multi-Platform Compilation</a>
+          </li>
+          <li>
+            <a href="#step-3-release-artifacts-upload-to-github-release" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 3: Release Artifacts Upload to GitHub Release</a>
+          </li>
+          <li>
+            <a href="#step-4-henu-platform-webhook-ingestion" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 4: HENU Platform Webhook Ingestion</a>
+          </li>
+          <li>
+            <a href="#step-5-platform-api-validation" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 5: Platform API Validation</a>
+          </li>
+          <li>
+            <a href="#step-6-henu-admin-review-gatekeeper" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 6: HENU Admin Review & Gatekeeper</a>
+          </li>
+          <li>
+            <a href="#step-7-catalogue-publishing" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 7: Catalogue Publishing</a>
+          </li>
+          <li>
+            <a href="#step-8-henu-hub-detection-and-installation" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Step 8: HENU HUB Detection and Installation</a>
+          </li>
+          <li>
+            <a href="#windows-packages" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Windows Packages</a>
+          </li>
+          <li>
+            <a href="#macos-packages" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">macOS Packages</a>
+          </li>
+          <li>
+            <a href="#linux-packages" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Linux Packages</a>
+          </li>
+          <li>
+            <a href="#web-applications" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Web Applications</a>
+          </li>
+        </ul>
+        <div class="mt-8 pt-6 border-t border-slate-200 dark:border-[#30363d] space-y-2 text-[11px] text-slate-500 dark:text-[#8b949e]">
+          <a href="https://github.com/henu-os/henu-hub-docs" target="_blank" rel="noreferrer" class="flex items-center gap-1.5 hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Edit this page on GitHub</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center gap-1.5 hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span>Contact HENU Support</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SPOTLIGHT SEARCH MODAL (Ctrl+K) -->
+  <div id="searchModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-start justify-center pt-20 px-4" onclick="closeSearchModal(event)">
+    <div class="w-full max-w-xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex items-center px-4 border-b border-slate-200 dark:border-[#30363d]">
+        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="spotlightInput" placeholder="Search documentation, guides, and architectures..." oninput="runSpotlightSearch()" class="w-full bg-transparent px-3 py-3.5 text-sm text-slate-900 dark:text-[#f0f6fc] placeholder-slate-400 focus:outline-none">
+        <kbd class="text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-[#30363d] px-1.5 py-0.5 rounded">ESC</kbd>
+      </div>
+      <div id="searchResults" class="max-h-96 overflow-y-auto p-2 divide-y divide-slate-100 dark:divide-[#21262d]">
+        <div class="p-4 text-center text-xs text-slate-400">Type a keyword to search all HENU platform documentation...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT-SIDE INTERACTIVITY SCRIPT -->
+  <script>
+    // Initialize Mermaid
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+        securityLevel: 'loose',
+      });
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    // Copy Code button
+    function copyCode(btn) {
+      const code = btn.closest('.code-block').querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const span = btn.querySelector('span');
+        const origText = span.innerText;
+        span.innerText = 'Copied!';
+        btn.classList.add('text-emerald-500');
+        setTimeout(() => {
+          span.innerText = origText;
+          btn.classList.remove('text-emerald-500');
+        }, 2000);
+      });
+    }
+
+    // Mobile Navigation Menu Toggle
+    function toggleMobileMenu() {
+      const drawer = document.getElementById('mobileDrawer');
+      drawer.classList.toggle('hidden');
+    }
+
+    // Accordion Category Toggle
+    function toggleNavCategory(btn) {
+      const container = btn.nextElementSibling;
+      const chevron = btn.querySelector('.chevron-icon');
+      container.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-90');
+    }
+
+    // Scroll Spy for Table of Contents
+    window.addEventListener('DOMContentLoaded', () => {
+      const headings = document.querySelectorAll('main h2[id], main h3[id]');
+      const tocLinks = document.querySelectorAll('.toc-link');
+
+      if (headings.length > 0 && tocLinks.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute('id');
+              tocLinks.forEach(link => {
+                if (link.getAttribute('href') === '#' + id) {
+                  link.classList.add('toc-active');
+                } else {
+                  link.classList.remove('toc-active');
+                }
+              });
+            }
+          });
+        }, { rootMargin: '0px 0px -70% 0px' });
+
+        headings.forEach(h => observer.observe(h));
+      }
+    });
+
+    // Spotlight Search System (Ctrl+K)
+    const searchDocs = [{"id":"README","title":"Platform Overview","file":"README.md","summary":"High-level introduction to the HENU OS ecosystem and architecture.","categoryName":"Getting Started & Overview"},{"id":"CORPORATE_SUPPORT","title":"Corporate Governance & Support","file":"CORPORATE_SUPPORT.md","summary":"Official company details, CIN, GSTIN, headquarters and support desks.","categoryName":"Getting Started & Overview"},{"id":"SYSTEM_ARCHITECTURE","title":"System Architecture","file":"SYSTEM_ARCHITECTURE.md","summary":"Master data flow, Prisma schema, SSE, and Ed25519 signatures.","categoryName":"Architecture & Specifications"},{"id":"REPOSITORIES_REFERENCE","title":"Repositories Reference","file":"REPOSITORIES_REFERENCE.md","summary":"Boundaries and contracts across all 6 HENU platform repositories.","categoryName":"Architecture & Specifications"},{"id":"PLATFORM_CAPABILITIES","title":"Platform Matrix & Capabilities","file":"PLATFORM_CAPABILITIES.md","summary":"OS support matrix for Windows, macOS, and Linux desktop clients.","categoryName":"Architecture & Specifications"},{"id":"ADDING_A_NEW_HENU_APPLICATION","title":"Adding a New Application","file":"ADDING_A_NEW_HENU_APPLICATION.md","summary":"Step-by-step onboarding walkthrough for developers and admins.","categoryName":"Setup & Configuration"},{"id":"API_SETUP","title":"Platform API Setup","file":"API_SETUP.md","summary":"Backend NestJS setup, database migrations, and cryptographic keys.","categoryName":"Setup & Configuration"},{"id":"ADMIN_SETUP","title":"Admin Console Setup","file":"ADMIN_SETUP.md","summary":"Next.js admin portal, role-based access control, and dashboards.","categoryName":"Setup & Configuration"},{"id":"HUB_SETUP","title":"HENU HUB Desktop Setup","file":"HUB_SETUP.md","summary":"Tauri & React desktop launcher installation and configuration.","categoryName":"Setup & Configuration"},{"id":"GITHUB_APP_SETUP","title":"GitHub App & Webhooks","file":"GITHUB_APP_SETUP.md","summary":"Automated CI/CD webhook dispatching and repository links.","categoryName":"Setup & Configuration"},{"id":"RELEASE_GUIDE","title":"Release Lifecycle & Packaging","file":"RELEASE_GUIDE.md","summary":"Package formats (EXE, MSI, ZIP, DMG, AppImage, DEB) and SHA-256 checks.","categoryName":"Release, Packaging & Catalogue"},{"id":"CATALOGUE_GUIDE","title":"Catalogue & Rollback","file":"CATALOGUE_GUIDE.md","summary":"Ed25519 signed revisions, ETag caching, and instant rollback.","categoryName":"Release, Packaging & Catalogue"},{"id":"CHANNELS_AND_VERSIONING","title":"Channels & Versioning","file":"CHANNELS_AND_VERSIONING.md","summary":"Stable, Beta, and Nightly release distribution rules.","categoryName":"Release, Packaging & Catalogue"},{"id":"SECURITY_GUIDE","title":"Security & Secrets Policy","file":"SECURITY_GUIDE.md","summary":"Credential management, zero plaintext secrets, and audit logging.","categoryName":"Security & Operations"},{"id":"DEPLOYMENT_GUIDE","title":"Production Deployment","file":"DEPLOYMENT_GUIDE.md","summary":"Hardened Docker, SSL/TLS reverse proxy, and container configs.","categoryName":"Security & Operations"},{"id":"TROUBLESHOOTING","title":"Troubleshooting Runbooks","file":"TROUBLESHOOTING.md","summary":"Diagnostic procedures, common error resolutions, and logs inspection.","categoryName":"Security & Operations"},{"id":"BACKUP_AND_RECOVERY","title":"Backup & Disaster Recovery","file":"BACKUP_AND_RECOVERY.md","summary":"PostgreSQL snapshots, revision restoration, and failover steps.","categoryName":"Security & Operations"}];
+
+    function openSearchModal() {
+      const modal = document.getElementById('searchModal');
+      modal.classList.remove('hidden');
+      const input = document.getElementById('spotlightInput');
+      input.value = '';
+      input.focus();
+      runSpotlightSearch();
+    }
+
+    function closeSearchModal(e) {
+      document.getElementById('searchModal').classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openSearchModal();
+      }
+      if (e.key === 'Escape') {
+        closeSearchModal();
+      }
+    });
+
+    function runSpotlightSearch() {
+      const query = document.getElementById('spotlightInput').value.trim().toLowerCase();
+      const resultsContainer = document.getElementById('searchResults');
+      
+      if (!query) {
+        resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">Type a keyword to search all HENU platform documentation...</div>';
+        return;
+      }
+
+      const matches = searchDocs.filter(d => 
+        d.title.toLowerCase().includes(query) || 
+        d.summary.toLowerCase().includes(query) ||
+        d.categoryName.toLowerCase().includes(query)
+      );
+
+      if (matches.length === 0) {
+        resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">No matching articles found for "' + query + '"</div>';
+        return;
+      }
+
+      let html = '';
+      matches.forEach(item => {
+        const url = item.id === 'README' ? 'index.html' : item.id + '.html';
+        html += '<a href="' + url + '" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-[#21262d] transition-colors">' +
+          '<div class="flex items-center justify-between">' +
+            '<span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc]">' + item.title + '</span>' +
+            '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#30363d] text-slate-500 dark:text-[#8b949e]">' + item.categoryName + '</span>' +
+          '</div>' +
+          '<p class="text-[11px] text-slate-500 dark:text-[#8b949e] mt-1 line-clamp-1">' + item.summary + '</p>' +
+        '</a>';
+      });
+      resultsContainer.innerHTML = html;
+    }
+  </script>
+</body>
+</html>

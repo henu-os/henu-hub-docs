@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform API Setup | HENU OS Documentation</title>
+  <meta name="description" content="Backend NestJS setup, database migrations, and cryptographic keys.">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/henu-logo.png">
+  
+  <!-- Tailwind CSS & GitHub Primer Typography -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#6D4AFF',
+              dark: '#5B37EB',
+              lavender: '#DCD5FF',
+              surface: '#F7F7FB',
+              ink: '#171329',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --color-canvas-default: #ffffff;
+      --color-canvas-subtle: #f6f8fa;
+      --color-border-default: #d0d7de;
+      --color-fg-default: #1f2328;
+      --color-fg-muted: #656d76;
+    }
+    .dark {
+      --color-canvas-default: #0d1117;
+      --color-canvas-subtle: #161b22;
+      --color-border-default: #30363d;
+      --color-fg-default: #e6edf3;
+      --color-fg-muted: #8b949e;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c1c7d0;
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #30363d;
+    }
+    /* Active TOC highlight */
+    .toc-active {
+      color: #6D4AFF !important;
+      font-weight: 600;
+      border-left: 2px solid #6D4AFF;
+      padding-left: 0.5rem;
+      margin-left: -0.75rem;
+    }
+    .dark .toc-active {
+      color: #a78bfa !important;
+      border-left-color: #a78bfa;
+    }
+  </style>
+
+  <script>
+    // Theme initialization (prevent flicker)
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+<body class="bg-white dark:bg-[#0d1117] text-slate-800 dark:text-[#e6edf3] antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- TOP NAVIGATION HEADER (GitHub Docs style) -->
+  <header class="sticky top-0 z-40 w-full bg-white/90 dark:bg-[#0d1117]/90 backdrop-blur-md border-b border-slate-200 dark:border-[#30363d]">
+    <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo & Product Brand -->
+      <div class="flex items-center gap-4 min-w-0">
+        <!-- Mobile hamburger -->
+        <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-[#8b949e] hover:bg-slate-100 dark:hover:bg-[#161b22]">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="21"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+
+        <a href="index.html" class="flex items-center gap-3 group">
+          <div class="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-[#30363d] shadow-2xs group-hover:border-[#6D4AFF] transition-colors">
+            <img src="assets/henu-logo.png" alt="HENU OS" class="w-full h-full object-contain" onerror="this.src='https://placehold.co/32x32/6D4AFF/white?text=H'">
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm tracking-tight text-slate-900 dark:text-[#f0f6fc]">HENU OS</span>
+            <span class="text-slate-300 dark:text-[#30363d]">/</span>
+            <span class="text-xs font-semibold text-slate-600 dark:text-[#8b949e]">Docs</span>
+          </div>
+        </a>
+
+        <!-- Version Selector -->
+        <div class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-[#161b22] text-[#6D4AFF] dark:text-[#a78bfa] border border-slate-200 dark:border-[#30363d]">
+          <span>v1.2.0</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-[#6D4AFF] text-white">PROD</span>
+        </div>
+      </div>
+
+      <!-- Center Spotlight Search Trigger -->
+      <div class="flex-1 max-w-lg mx-2 hidden md:block">
+        <button onclick="openSearchModal()" class="w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-slate-400 dark:text-[#8b949e] bg-slate-50 dark:bg-[#161b22] hover:bg-slate-100 dark:hover:bg-[#21262d] border border-slate-200 dark:border-[#30363d] rounded-lg transition-all shadow-2xs group">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Search documentation...</span>
+          </span>
+          <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-[#8b949e] bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-[#30363d] rounded shadow-2xs">Ctrl K</kbd>
+        </button>
+      </div>
+
+      <!-- Right Navigation Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Search icon for mobile -->
+        <button onclick="openSearchModal()" class="md:hidden p-2 text-slate-600 dark:text-[#8b949e] hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+
+        <a href="https://github.com/henu-os" target="_blank" rel="noreferrer" class="p-2 text-slate-500 hover:text-slate-900 dark:text-[#8b949e] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg transition-colors" title="GitHub Repositories">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-slate-900 dark:text-[#8b949e] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#161b22] rounded-lg transition-colors" title="Toggle color theme">
+          <svg id="sunIcon" class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="moonIcon" class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <a href="CORPORATE_SUPPORT.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#6D4AFF] text-white hover:bg-[#5B37EB] transition-colors shadow-2xs">
+          <span>Support Desk</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE SIDEBAR OVERLAY -->
+  <div id="mobileDrawer" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs hidden lg:hidden" onclick="toggleMobileMenu()">
+    <div class="w-80 max-w-[85%] h-full bg-white dark:bg-[#0d1117] p-6 overflow-y-auto border-r border-slate-200 dark:border-[#30363d]" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-[#30363d]">
+        <div class="flex items-center gap-2">
+          <img src="assets/henu-logo.png" alt="HENU OS" class="w-6 h-6 object-contain">
+          <span class="font-bold text-sm text-slate-900 dark:text-[#f0f6fc]">HENU Docs</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="p-1 text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <nav>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[#6D4AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Getting Started & Overview</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="index.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Overview</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Corporate Governance & Support</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Architecture & Specifications</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SYSTEM_ARCHITECTURE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">System Architecture</span>
+          </a>
+          <a href="REPOSITORIES_REFERENCE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Repositories Reference</span>
+          </a>
+          <a href="PLATFORM_CAPABILITIES.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Matrix & Capabilities</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Setup & Configuration</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 ">
+          <a href="ADDING_A_NEW_HENU_APPLICATION.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Adding a New Application</span>
+          </a>
+          <a href="API_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors bg-[#F0EEFF] dark:bg-[#1f1a3a] text-[#6D4AFF] dark:text-[#a78bfa] font-semibold border-l-2 border-[#6D4AFF]">
+            <span class="truncate">Platform API Setup</span>
+          </a>
+          <a href="ADMIN_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Admin Console Setup</span>
+          </a>
+          <a href="HUB_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">HENU HUB Desktop Setup</span>
+          </a>
+          <a href="GITHUB_APP_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">GitHub App & Webhooks</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span>Release, Packaging & Catalogue</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="RELEASE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Release Lifecycle & Packaging</span>
+          </a>
+          <a href="CATALOGUE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Catalogue & Rollback</span>
+          </a>
+          <a href="CHANNELS_AND_VERSIONING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Channels & Versioning</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Security & Operations</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SECURITY_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Security & Secrets Policy</span>
+          </a>
+          <a href="DEPLOYMENT_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Production Deployment</span>
+          </a>
+          <a href="TROUBLESHOOTING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Troubleshooting Runbooks</span>
+          </a>
+          <a href="BACKUP_AND_RECOVERY.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Backup & Disaster Recovery</span>
+          </a>
+        </div>
+      </div></nav>
+    </div>
+  </div>
+
+  <!-- MAIN 3-COLUMN CONTENT WRAPPER -->
+  <div class="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex py-6 gap-8">
+    
+    <!-- LEFT SIDEBAR NAVIGATION (Desktop) -->
+    <aside class="w-64 flex-shrink-0 hidden lg:block sticky top-22 self-start max-h-[calc(100vh-6.5rem)] overflow-y-auto pr-3">
+      <nav id="desktopNav" class="text-xs">
+        
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-[#6D4AFF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Getting Started & Overview</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="index.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Overview</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Corporate Governance & Support</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Architecture & Specifications</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SYSTEM_ARCHITECTURE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">System Architecture</span>
+          </a>
+          <a href="REPOSITORIES_REFERENCE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Repositories Reference</span>
+          </a>
+          <a href="PLATFORM_CAPABILITIES.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Platform Matrix & Capabilities</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Setup & Configuration</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 ">
+          <a href="ADDING_A_NEW_HENU_APPLICATION.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Adding a New Application</span>
+          </a>
+          <a href="API_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors bg-[#F0EEFF] dark:bg-[#1f1a3a] text-[#6D4AFF] dark:text-[#a78bfa] font-semibold border-l-2 border-[#6D4AFF]">
+            <span class="truncate">Platform API Setup</span>
+          </a>
+          <a href="ADMIN_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Admin Console Setup</span>
+          </a>
+          <a href="HUB_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">HENU HUB Desktop Setup</span>
+          </a>
+          <a href="GITHUB_APP_SETUP.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">GitHub App & Webhooks</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <span>Release, Packaging & Catalogue</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="RELEASE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Release Lifecycle & Packaging</span>
+          </a>
+          <a href="CATALOGUE_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Catalogue & Rollback</span>
+          </a>
+          <a href="CHANNELS_AND_VERSIONING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Channels & Versioning</span>
+          </a>
+        </div>
+      </div>
+      <div class="nav-category mb-4">
+        <button class="nav-category-btn w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-[#c9d1d9] hover:bg-slate-100 dark:hover:bg-[#21262d] rounded-lg transition-colors group" onclick="toggleNavCategory(this)">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Security & Operations</span>
+          </span>
+          <svg class="chevron-icon w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-transform " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+        <div class="nav-items-container pl-6 pr-1 mt-1 space-y-0.5 hidden">
+          <a href="SECURITY_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Security & Secrets Policy</span>
+          </a>
+          <a href="DEPLOYMENT_GUIDE.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Production Deployment</span>
+          </a>
+          <a href="TROUBLESHOOTING.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Troubleshooting Runbooks</span>
+          </a>
+          <a href="BACKUP_AND_RECOVERY.html" class="flex items-center px-2.5 py-1.5 rounded-r-lg text-xs transition-colors text-slate-600 dark:text-[#8b949e] hover:text-slate-900 dark:hover:text-[#f0f6fc] hover:bg-slate-100/80 dark:hover:bg-[#161b22] font-normal">
+            <span class="truncate">Backup & Disaster Recovery</span>
+          </a>
+        </div>
+      </div>
+      </nav>
+    </aside>
+
+    <!-- CENTER ARTICLE CONTENT -->
+    <main class="flex-1 min-w-0 max-w-4xl">
+      
+      <!-- Breadcrumb Bar -->
+      <nav class="flex items-center gap-2 text-xs text-slate-400 dark:text-[#8b949e] mb-4 font-medium">
+        <a href="index.html" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">Docs</a>
+        <span>/</span>
+        <span class="text-slate-600 dark:text-[#c9d1d9] truncate">Platform API Setup</span>
+      </nav>
+
+      <!-- Article Header & Meta -->
+      <div class="mb-8">
+        <p class="text-sm text-slate-500 dark:text-[#8b949e] mt-1 leading-relaxed">Backend NestJS setup, database migrations, and cryptographic keys.</p>
+        <div class="flex items-center gap-4 text-xs text-slate-400 dark:text-[#8b949e] mt-3 pt-3 border-t border-slate-100 dark:border-[#21262d]">
+          <span class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Verified Production Spec</span>
+          </span>
+          <span>•</span>
+          <span>HENU OS PRIVATE LIMITED</span>
+        </div>
+      </div>
+
+      <!-- Rendered Article -->
+      <article class="prose max-w-none text-slate-800 dark:text-[#c9d1d9] leading-relaxed">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-2 mb-4 pb-3 border-b border-slate-200 dark:border-[#30363d]">HENU Platform API Setup Guide</h1>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-platform-api</code> is the NestJS backend and source of truth for identity, application inventory, GitHub release ingestion, and catalogue management.</p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">---</p>
+
+<h2 id="1-prerequisites" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>1. Prerequisites</span>
+      <a href="#1-prerequisites" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+<ul class="my-3 space-y-1 pl-2"><li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Node.js</strong>: v20+ LTS</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Docker</strong>: For local PostgreSQL (or external PostgreSQL 15+ database)</li>
+<li class="ml-4 list-disc text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed"><strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Git</strong></li>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ul>---</p>
+
+<h2 id="2-environment-configuration" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>2. Environment Configuration</span>
+      <a href="#2-environment-configuration" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Copy the example environment file and configure local credentials:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>cd henu-platform-api
+cp .env.example .env
+</code></pre>
+    </div>
+
+<h3 id="essential-environment-variables" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Essential Environment Variables</span>
+      <a href="#essential-environment-variables" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<div class="my-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#30363d] shadow-2xs"><table class="w-full text-left text-xs border-collapse"><thead class="bg-slate-50 dark:bg-[#161b22] border-b border-slate-200 dark:border-[#30363d] text-slate-700 dark:text-[#c9d1d9] font-semibold"><tr><th class="px-4 py-3">Variable</th><th class="px-4 py-3">Description</th><th class="px-4 py-3">Example (Development)</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-[#21262d] bg-white dark:bg-[#0d1117]"><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">NODE_ENV</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Runtime environment</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">development</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">PORT</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">API server listen port</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">3000</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">DATABASE_URL</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">PostgreSQL Prisma connection string</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">postgresql://henu_admin:<strong-db-password>@localhost:5432/henu_platform?schema=public</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">JWT_ACCESS_SECRET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Secret key for access token signing</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">minimum_32_characters_random_secret_key_123</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">JWT_ACCESS_EXPIRATION</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Access token lifespan</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">15m</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">JWT_REFRESH_SECRET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Secret key for rotating refresh tokens</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">another_minimum_32_characters_refresh_secret</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">JWT_REFRESH_EXPIRATION</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Refresh token lifespan</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">7d</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GITHUB_APP_ID</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">GitHub App ID</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">123456</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GITHUB_APP_PRIVATE_KEY</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">RSA Private Key for GitHub App auth</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Base64 or PEM string</td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GITHUB_WEBHOOK_SECRET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">HMAC Webhook secret</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">your_github_webhook_secret_here</code></td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">CORS_ORIGINS</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Permitted origins for frontend communication</td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3001,http://localhost:5173</code></td></tr></tbody></table></div>
+---
+
+<h2 id="3-database-initialization-migrations" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>3. Database Initialization & Migrations</span>
+      <a href="#3-database-initialization-migrations" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Start the local PostgreSQL container via Docker Compose:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>docker-compose up -d postgres
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Verify PostgreSQL is running:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>docker ps
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Apply Prisma database migrations:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>npm run prisma:migrate:dev
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">Generate Prisma client:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>npm run prisma:generate
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">---</p>
+
+<h2 id="4-initial-admin-user-provisioning" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>4. Initial Admin User Provisioning</span>
+      <a href="#4-initial-admin-user-provisioning" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">To prevent insecure default credentials, <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">henu-platform-api</code> does <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">not</strong> provide a public admin registration endpoint. Use the secure CLI seeding script to provision your initial Super Admin:</p>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code># Provide temporary bootstrap credentials via environment variables
+BOOTSTRAP_ADMIN_EMAIL="admin@henuos.com" \
+BOOTSTRAP_ADMIN_PASSWORD="&lt;choose-a-strong-secret-password-min-12-chars&gt;" \
+BOOTSTRAP_ADMIN_NAME="System Administrator" \
+npm run seed:admin
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">The script:
+<ol class="my-3 space-y-1 pl-2"><li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Hashes the password using <strong class="font-bold text-slate-900 dark:text-[#f0f6fc]">Argon2id</strong> (memory cost 64MB, 3 iterations, 4 parallelism).</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Assigns the <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">SUPER_ADMIN</code> role.</li>
+<li class="ml-4 list-decimal text-xs text-slate-700 dark:text-[#c9d1d9] my-1 leading-relaxed">Generates TOTP MFA recovery codes.</li></p>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]"></ol>---</p>
+
+<h2 id="5-starting-the-service" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>5. Starting the Service</span>
+      <a href="#5-starting-the-service" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<h3 id="development-mode" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Development Mode</span>
+      <a href="#development-mode" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>npm run start:dev
+</code></pre>
+    </div>
+
+<h3 id="production-mode" class="scroll-mt-24 text-base font-semibold tracking-tight text-slate-800 dark:text-[#c9d1d9] mt-6 mb-3 flex items-center justify-between group">
+      <span>Production Mode</span>
+      <a href="#production-mode" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-xs ml-2 transition-opacity">#</a>
+    </h3>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code>npm run build
+npm run start:prod
+</code></pre>
+    </div>
+
+<p class="my-3 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#c9d1d9]">---</p>
+
+<h2 id="6-verification-probes" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>6. Verification & Probes</span>
+      <a href="#6-verification-probes" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<div class="my-6 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#30363d] shadow-2xs"><table class="w-full text-left text-xs border-collapse"><thead class="bg-slate-50 dark:bg-[#161b22] border-b border-slate-200 dark:border-[#30363d] text-slate-700 dark:text-[#c9d1d9] font-semibold"><tr><th class="px-4 py-3">Endpoint</th><th class="px-4 py-3">Method</th><th class="px-4 py-3">Expected Status</th><th class="px-4 py-3">Purpose</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-[#21262d] bg-white dark:bg-[#0d1117]"><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3000/api/v1/health/live</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">200 OK</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Liveness probe</td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3000/api/v1/health/ready</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">200 OK</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Readiness probe (verifies database)</td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3000/api/docs</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">200 OK</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Interactive Swagger/OpenAPI documentation</td></tr><tr class="hover:bg-slate-50/80 dark:hover:bg-[#161b22]/50 transition-colors"><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">http://localhost:3000/api/v1/hub/catalogue</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">GET</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]"><code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#21262d] text-[#6D4AFF] dark:text-[#a58dfa] font-mono text-[11px] border border-slate-200/60 dark:border-[#30363d]">200 OK</code></td><td class="px-4 py-3 text-slate-600 dark:text-[#8b949e]">Public application catalogue (ETag enabled)</td></tr></tbody></table></div>
+---
+
+<h2 id="7-automated-testing" class="scroll-mt-24 text-xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-10 mb-4 flex items-center justify-between group">
+      <span>7. Automated Testing</span>
+      <a href="#7-automated-testing" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#6D4AFF] text-sm ml-2 transition-opacity">#</a>
+    </h2>
+
+<div class="code-block my-5 rounded-xl border border-slate-200 dark:border-[#30363d] bg-[#f6f8fa] dark:bg-[#161b22] overflow-hidden shadow-xs">
+      <div class="code-header flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-[#30363d] bg-slate-100/70 dark:bg-[#21262d] text-xs font-mono text-slate-600 dark:text-[#8b949e]">
+        <span class="font-semibold uppercase tracking-wider">bash</span>
+        <button class="copy-btn inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-sans text-slate-600 dark:text-[#c9d1d9] hover:bg-slate-200 dark:hover:bg-[#30363d] transition-all" onclick="copyCode(this)">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <pre class="p-4 text-xs font-mono text-slate-900 dark:text-[#e6edf3] overflow-x-auto leading-relaxed"><code># Unit tests
+npm test
+
+<h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-[#f0f6fc] mt-2 mb-4 pb-3 border-b border-slate-200 dark:border-[#30363d]">End-to-end integration tests (requires test database)</h1>
+npm run test:e2e
+</code></pre>
+    </div>
+      </article>
+
+      <!-- Previous / Next Navigation Cards -->
+      <div class="mt-12 pt-6 border-t border-slate-200 dark:border-[#30363d] grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <a href="ADDING_A_NEW_HENU_APPLICATION.html" class="group p-4 rounded-xl border border-slate-200 dark:border-[#30363d] hover:border-[#6D4AFF] dark:hover:border-[#6D4AFF] bg-slate-50/50 dark:bg-[#161b22]/50 hover:bg-white dark:hover:bg-[#161b22] transition-all flex flex-col">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+          <svg class="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Previous
+        </span>
+        <span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc] mt-1 group-hover:text-[#6D4AFF] dark:group-hover:text-[#a78bfa] transition-colors">Adding a New Application</span>
+      </a>
+      <a href="ADMIN_SETUP.html" class="group p-4 rounded-xl border border-slate-200 dark:border-[#30363d] hover:border-[#6D4AFF] dark:hover:border-[#6D4AFF] bg-slate-50/50 dark:bg-[#161b22]/50 hover:bg-white dark:hover:bg-[#161b22] transition-all flex flex-col text-right">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-end gap-1">
+          Next
+          <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+        <span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc] mt-1 group-hover:text-[#6D4AFF] dark:group-hover:text-[#a78bfa] transition-colors">Admin Console Setup</span>
+      </a></div>
+
+      <!-- Footer Info Bar -->
+      <footer class="mt-14 pt-8 border-t border-slate-200 dark:border-[#30363d] text-xs text-slate-400 dark:text-[#8b949e] flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          Official documentation for <strong class="text-slate-700 dark:text-[#c9d1d9]">HENU OS PRIVATE LIMITED</strong> (CIN: <code class="text-[11px]">U62099RJ2025PTC109150</code>)
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="CORPORATE_SUPPORT.html" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">Governance & Legal</a>
+          <span>•</span>
+          <a href="https://www.henuos.in/" target="_blank" rel="noreferrer" class="hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">henuos.in</a>
+        </div>
+      </footer>
+    </main>
+
+    <!-- RIGHT SIDEBAR ("In this article") (Desktop) -->
+    <aside class="w-56 flex-shrink-0 hidden xl:block self-start">
+      
+      <div class="toc-container sticky top-20 text-xs">
+        <div class="font-semibold text-slate-900 dark:text-[#f0f6fc] uppercase tracking-wider text-[11px] mb-3 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          <span>In this article</span>
+        </div>
+        <ul class="space-y-1.5 border-l border-slate-200 dark:border-[#30363d] pl-3 text-slate-600 dark:text-[#8b949e]">
+          <li>
+            <a href="#1-prerequisites" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">1. Prerequisites</a>
+          </li>
+          <li>
+            <a href="#2-environment-configuration" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">2. Environment Configuration</a>
+          </li>
+          <li>
+            <a href="#3-database-initialization-migrations" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">3. Database Initialization & Migrations</a>
+          </li>
+          <li>
+            <a href="#4-initial-admin-user-provisioning" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">4. Initial Admin User Provisioning</a>
+          </li>
+          <li>
+            <a href="#5-starting-the-service" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">5. Starting the Service</a>
+          </li>
+          <li>
+            <a href="#6-verification-probes" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">6. Verification & Probes</a>
+          </li>
+          <li>
+            <a href="#7-automated-testing" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors ">7. Automated Testing</a>
+          </li>
+          <li>
+            <a href="#essential-environment-variables" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Essential Environment Variables</a>
+          </li>
+          <li>
+            <a href="#development-mode" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Development Mode</a>
+          </li>
+          <li>
+            <a href="#production-mode" class="toc-link block truncate hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors pl-3 text-[11px]">Production Mode</a>
+          </li>
+        </ul>
+        <div class="mt-8 pt-6 border-t border-slate-200 dark:border-[#30363d] space-y-2 text-[11px] text-slate-500 dark:text-[#8b949e]">
+          <a href="https://github.com/henu-os/henu-hub-docs" target="_blank" rel="noreferrer" class="flex items-center gap-1.5 hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span>Edit this page on GitHub</span>
+          </a>
+          <a href="CORPORATE_SUPPORT.html" class="flex items-center gap-1.5 hover:text-[#6D4AFF] dark:hover:text-[#58a6ff] transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <span>Contact HENU Support</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SPOTLIGHT SEARCH MODAL (Ctrl+K) -->
+  <div id="searchModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-start justify-center pt-20 px-4" onclick="closeSearchModal(event)">
+    <div class="w-full max-w-xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+      <div class="flex items-center px-4 border-b border-slate-200 dark:border-[#30363d]">
+        <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="spotlightInput" placeholder="Search documentation, guides, and architectures..." oninput="runSpotlightSearch()" class="w-full bg-transparent px-3 py-3.5 text-sm text-slate-900 dark:text-[#f0f6fc] placeholder-slate-400 focus:outline-none">
+        <kbd class="text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-[#30363d] px-1.5 py-0.5 rounded">ESC</kbd>
+      </div>
+      <div id="searchResults" class="max-h-96 overflow-y-auto p-2 divide-y divide-slate-100 dark:divide-[#21262d]">
+        <div class="p-4 text-center text-xs text-slate-400">Type a keyword to search all HENU platform documentation...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT-SIDE INTERACTIVITY SCRIPT -->
+  <script>
+    // Initialize Mermaid
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+        securityLevel: 'loose',
+      });
+    }
+
+    // Theme toggle
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    // Copy Code button
+    function copyCode(btn) {
+      const code = btn.closest('.code-block').querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const span = btn.querySelector('span');
+        const origText = span.innerText;
+        span.innerText = 'Copied!';
+        btn.classList.add('text-emerald-500');
+        setTimeout(() => {
+          span.innerText = origText;
+          btn.classList.remove('text-emerald-500');
+        }, 2000);
+      });
+    }
+
+    // Mobile Navigation Menu Toggle
+    function toggleMobileMenu() {
+      const drawer = document.getElementById('mobileDrawer');
+      drawer.classList.toggle('hidden');
+    }
+
+    // Accordion Category Toggle
+    function toggleNavCategory(btn) {
+      const container = btn.nextElementSibling;
+      const chevron = btn.querySelector('.chevron-icon');
+      container.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-90');
+    }
+
+    // Scroll Spy for Table of Contents
+    window.addEventListener('DOMContentLoaded', () => {
+      const headings = document.querySelectorAll('main h2[id], main h3[id]');
+      const tocLinks = document.querySelectorAll('.toc-link');
+
+      if (headings.length > 0 && tocLinks.length > 0) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute('id');
+              tocLinks.forEach(link => {
+                if (link.getAttribute('href') === '#' + id) {
+                  link.classList.add('toc-active');
+                } else {
+                  link.classList.remove('toc-active');
+                }
+              });
+            }
+          });
+        }, { rootMargin: '0px 0px -70% 0px' });
+
+        headings.forEach(h => observer.observe(h));
+      }
+    });
+
+    // Spotlight Search System (Ctrl+K)
+    const searchDocs = [{"id":"README","title":"Platform Overview","file":"README.md","summary":"High-level introduction to the HENU OS ecosystem and architecture.","categoryName":"Getting Started & Overview"},{"id":"CORPORATE_SUPPORT","title":"Corporate Governance & Support","file":"CORPORATE_SUPPORT.md","summary":"Official company details, CIN, GSTIN, headquarters and support desks.","categoryName":"Getting Started & Overview"},{"id":"SYSTEM_ARCHITECTURE","title":"System Architecture","file":"SYSTEM_ARCHITECTURE.md","summary":"Master data flow, Prisma schema, SSE, and Ed25519 signatures.","categoryName":"Architecture & Specifications"},{"id":"REPOSITORIES_REFERENCE","title":"Repositories Reference","file":"REPOSITORIES_REFERENCE.md","summary":"Boundaries and contracts across all 6 HENU platform repositories.","categoryName":"Architecture & Specifications"},{"id":"PLATFORM_CAPABILITIES","title":"Platform Matrix & Capabilities","file":"PLATFORM_CAPABILITIES.md","summary":"OS support matrix for Windows, macOS, and Linux desktop clients.","categoryName":"Architecture & Specifications"},{"id":"ADDING_A_NEW_HENU_APPLICATION","title":"Adding a New Application","file":"ADDING_A_NEW_HENU_APPLICATION.md","summary":"Step-by-step onboarding walkthrough for developers and admins.","categoryName":"Setup & Configuration"},{"id":"API_SETUP","title":"Platform API Setup","file":"API_SETUP.md","summary":"Backend NestJS setup, database migrations, and cryptographic keys.","categoryName":"Setup & Configuration"},{"id":"ADMIN_SETUP","title":"Admin Console Setup","file":"ADMIN_SETUP.md","summary":"Next.js admin portal, role-based access control, and dashboards.","categoryName":"Setup & Configuration"},{"id":"HUB_SETUP","title":"HENU HUB Desktop Setup","file":"HUB_SETUP.md","summary":"Tauri & React desktop launcher installation and configuration.","categoryName":"Setup & Configuration"},{"id":"GITHUB_APP_SETUP","title":"GitHub App & Webhooks","file":"GITHUB_APP_SETUP.md","summary":"Automated CI/CD webhook dispatching and repository links.","categoryName":"Setup & Configuration"},{"id":"RELEASE_GUIDE","title":"Release Lifecycle & Packaging","file":"RELEASE_GUIDE.md","summary":"Package formats (EXE, MSI, ZIP, DMG, AppImage, DEB) and SHA-256 checks.","categoryName":"Release, Packaging & Catalogue"},{"id":"CATALOGUE_GUIDE","title":"Catalogue & Rollback","file":"CATALOGUE_GUIDE.md","summary":"Ed25519 signed revisions, ETag caching, and instant rollback.","categoryName":"Release, Packaging & Catalogue"},{"id":"CHANNELS_AND_VERSIONING","title":"Channels & Versioning","file":"CHANNELS_AND_VERSIONING.md","summary":"Stable, Beta, and Nightly release distribution rules.","categoryName":"Release, Packaging & Catalogue"},{"id":"SECURITY_GUIDE","title":"Security & Secrets Policy","file":"SECURITY_GUIDE.md","summary":"Credential management, zero plaintext secrets, and audit logging.","categoryName":"Security & Operations"},{"id":"DEPLOYMENT_GUIDE","title":"Production Deployment","file":"DEPLOYMENT_GUIDE.md","summary":"Hardened Docker, SSL/TLS reverse proxy, and container configs.","categoryName":"Security & Operations"},{"id":"TROUBLESHOOTING","title":"Troubleshooting Runbooks","file":"TROUBLESHOOTING.md","summary":"Diagnostic procedures, common error resolutions, and logs inspection.","categoryName":"Security & Operations"},{"id":"BACKUP_AND_RECOVERY","title":"Backup & Disaster Recovery","file":"BACKUP_AND_RECOVERY.md","summary":"PostgreSQL snapshots, revision restoration, and failover steps.","categoryName":"Security & Operations"}];
+
+    function openSearchModal() {
+      const modal = document.getElementById('searchModal');
+      modal.classList.remove('hidden');
+      const input = document.getElementById('spotlightInput');
+      input.value = '';
+      input.focus();
+      runSpotlightSearch();
+    }
+
+    function closeSearchModal(e) {
+      document.getElementById('searchModal').classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        openSearchModal();
+      }
+      if (e.key === 'Escape') {
+        closeSearchModal();
+      }
+    });
+
+    function runSpotlightSearch() {
+      const query = document.getElementById('spotlightInput').value.trim().toLowerCase();
+      const resultsContainer = document.getElementById('searchResults');
+      
+      if (!query) {
+        resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">Type a keyword to search all HENU platform documentation...</div>';
+        return;
+      }
+
+      const matches = searchDocs.filter(d => 
+        d.title.toLowerCase().includes(query) || 
+        d.summary.toLowerCase().includes(query) ||
+        d.categoryName.toLowerCase().includes(query)
+      );
+
+      if (matches.length === 0) {
+        resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">No matching articles found for "' + query + '"</div>';
+        return;
+      }
+
+      let html = '';
+      matches.forEach(item => {
+        const url = item.id === 'README' ? 'index.html' : item.id + '.html';
+        html += '<a href="' + url + '" class="block p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-[#21262d] transition-colors">' +
+          '<div class="flex items-center justify-between">' +
+            '<span class="text-xs font-semibold text-slate-900 dark:text-[#f0f6fc]">' + item.title + '</span>' +
+            '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#30363d] text-slate-500 dark:text-[#8b949e]">' + item.categoryName + '</span>' +
+          '</div>' +
+          '<p class="text-[11px] text-slate-500 dark:text-[#8b949e] mt-1 line-clamp-1">' + item.summary + '</p>' +
+        '</a>';
+      });
+      resultsContainer.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
